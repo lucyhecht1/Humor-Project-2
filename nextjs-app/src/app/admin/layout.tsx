@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { AdminNav } from "./_components/AdminNav";
 
@@ -55,11 +56,17 @@ export default async function AdminLayout({
           <form action="/logout" method="POST" className="mt-2">
             <button
               type="submit"
-              className="w-full rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+              className="w-full cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
             >
               Sign out
             </button>
           </form>
+          <Link
+            href="/"
+            className="mt-3 inline-flex w-full justify-center cursor-pointer rounded-full border border-green-200 bg-green-50/80 px-4 py-1.5 text-sm font-medium text-green-700 transition-colors hover:border-green-300 hover:bg-green-100 active:scale-[0.98]"
+          >
+            Back to homepage
+          </Link>
         </div>
       </aside>
 

@@ -13,7 +13,7 @@ export function DeleteButton({ id }: { id: string }) {
             e.preventDefault();
           }
         }}
-        className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-red-700"
+        className="cursor-pointer rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-red-700"
       >
         Delete
       </button>

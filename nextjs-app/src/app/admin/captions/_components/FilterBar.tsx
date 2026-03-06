@@ -48,7 +48,7 @@ export function FilterBar({ imageId, profileId }: Props) {
       />
       <button
         type="submit"
-        className="h-9 rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="h-9 cursor-pointer rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
       >
         Filter
       </button>
@@ -56,7 +56,7 @@ export function FilterBar({ imageId, profileId }: Props) {
         <button
           type="button"
           onClick={handleClear}
-          className="h-9 rounded-md px-3 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+          className="h-9 cursor-pointer rounded-md px-3 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
         >
           Clear
         </button>

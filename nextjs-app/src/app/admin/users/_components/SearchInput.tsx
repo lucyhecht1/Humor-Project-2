@@ -21,7 +21,7 @@ export function SearchInput({ defaultValue }: { defaultValue: string }) {
       </div>
       <button
         type="submit"
-        className="h-9 rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="h-9 cursor-pointer rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
       >
         Search
       </button>
