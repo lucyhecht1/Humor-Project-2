@@ -13,7 +13,7 @@ export function DeleteButton({ id }: { id: string }) {
             e.preventDefault();
           }
         }}
-        className="text-sm font-medium text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+        className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-red-700"
       >
         Delete
       </button>

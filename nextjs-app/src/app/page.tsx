@@ -160,7 +160,7 @@ export default async function HomePage() {
   // ── render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans" suppressHydrationWarning>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="bg-zinc-950 px-6 py-20 text-center">
@@ -185,42 +185,6 @@ export default async function HomePage() {
               <p className="mt-2 text-sm text-zinc-500">{label}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ── The conversation ─────────────────────────────────────────────── */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-5xl">
-          <SectionLabel>The conversation</SectionLabel>
-          <div className="mt-10 grid grid-cols-1 gap-12 md:grid-cols-2 md:items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-zinc-900">
-                Each image sparks{" "}
-                <span className="text-orange-500">{avgCaptionsPerImage}</span>{" "}
-                captions on average.
-              </h2>
-              <p className="mt-4 text-zinc-500">
-                Some images ignite a flood of responses; others sit quietly.
-                Here's how caption activity is distributed across all images.
-              </p>
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <MiniStat
-                  value={n(captionsByImage.size)}
-                  label="Images with captions"
-                />
-                <MiniStat
-                  value={n(imagesWithNoCaptions)}
-                  label="Images with no captions"
-                />
-              </div>
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-400">
-                Number of images → by caption count
-              </p>
-              <DistributionBarChart data={captionsPerImageDist} color="#f97316" />
-            </div>
-          </div>
         </div>
       </section>
 
@@ -271,6 +235,42 @@ export default async function HomePage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ── The conversation ─────────────────────────────────────────────── */}
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-5xl">
+          <SectionLabel>The conversation</SectionLabel>
+          <div className="mt-10 grid grid-cols-1 gap-12 md:grid-cols-2 md:items-center">
+            <div>
+              <h2 className="text-3xl font-bold text-zinc-900">
+                Each image sparks{" "}
+                <span className="text-orange-500">{avgCaptionsPerImage}</span>{" "}
+                captions on average.
+              </h2>
+              <p className="mt-4 text-zinc-500">
+                Some images ignite a flood of responses; others sit quietly.
+                Here's how caption activity is distributed across all images.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <MiniStat
+                  value={n(captionsByImage.size)}
+                  label="Images with captions"
+                />
+                <MiniStat
+                  value={n(imagesWithNoCaptions)}
+                  label="Images with no captions"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-400">
+                Number of images → by caption count
+              </p>
+              <DistributionBarChart data={captionsPerImageDist} color="#f97316" />
+            </div>
+          </div>
         </div>
       </section>
 

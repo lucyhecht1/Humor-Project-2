@@ -32,23 +32,30 @@ export default async function AdminLayout({
   const { user } = result;
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-zinc-950">
+    <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Sidebar */}
-      <aside className="flex w-56 flex-shrink-0 flex-col border-r border-zinc-200 px-3 py-6 dark:border-zinc-800">
-        <p className="mb-6 px-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-          Admin
-        </p>
+      <aside className="flex w-64 flex-shrink-0 flex-col border-r border-zinc-200/80 bg-white dark:border-zinc-800/80 dark:bg-zinc-900/50">
+        <div className="px-4 pt-8 pb-6">
+          <h1 className="mt-3 text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Admin Panel
+          </h1>
+          <p className="mt-2 text-sm italic leading-snug text-zinc-500 dark:text-zinc-400">
+            Where the Crackd Magic Happens
+          </p>
+        </div>
 
-        <AdminNav />
+        <div className="flex-1 px-3">
+          <AdminNav />
+        </div>
 
-        <div className="mt-auto space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <p className="truncate px-3 text-xs text-zinc-400 dark:text-zinc-500">
+        <div className="border-t border-zinc-200/80 px-3 py-4 dark:border-zinc-800/80">
+          <p className="truncate px-2 text-xs text-zinc-500 dark:text-zinc-400" title={user.email ?? undefined}>
             {user.email}
           </p>
-          <form action="/logout" method="POST">
+          <form action="/logout" method="POST" className="mt-2">
             <button
               type="submit"
-              className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+              className="w-full rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
             >
               Sign out
             </button>

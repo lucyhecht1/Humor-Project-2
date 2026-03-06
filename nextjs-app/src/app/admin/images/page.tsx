@@ -12,40 +12,123 @@ interface Image {
   modified_datetime_utc: string | null;
 }
 
-function formatDate(iso: string | null) {
+type Props = {
+  searchParams: Promise<{ page?: string; q?: string; filter?: string }>;
+};
+
+const PAGE_SIZE = 30;
+
+function formatDateShort(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
+  return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric",
     timeZone: "UTC",
-    timeZoneName: "short",
   });
 }
 
-export default async function ImagesPage() {
+export default async function ImagesPage({ searchParams }: Props) {
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
+  const { page: pageParam = "1", q = "", filter = "all" } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam, 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   const supabase = await createClient();
-  const { data: images, error } = await supabase
+  let query = supabase
     .from("images")
-    .select("id, url, profile_id, is_public, created_datetime_utc, modified_datetime_utc")
+    .select("id, url, profile_id, is_public, created_datetime_utc, modified_datetime_utc", { count: "exact" })
     .order("created_datetime_utc", { ascending: false })
-    .returns<Image[]>();
+    .range(from, to);
+
+  if (q.trim()) query = query.ilike("url", `%${q.trim()}%`);
+  if (filter === "public") query = query.eq("is_public", true);
+
+  const { data: images, error, count } = await query.returns<Image[]>();
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
+
+  function filterHref(f: string) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (f !== "all") params.set("filter", f);
+    const qs = params.toString();
+    return `/admin/images${qs ? `?${qs}` : ""}`;
+  }
+
+  function pageHref(p: number) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (filter !== "all") params.set("filter", filter);
+    params.set("page", String(p));
+    return `/admin/images?${params.toString()}`;
+  }
+
+  const filters = [
+    { key: "all", label: "All" },
+    { key: "public", label: "Public" },
+  ];
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Images</h1>
-        <Link
-          href="/admin/images/new"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          + New image
-        </Link>
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Images</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {(count ?? 0).toLocaleString("en-US")} images total
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <form action="/admin/images" method="GET" className="relative">
+            {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="Search images..."
+              className="h-9 w-56 rounded-md border border-zinc-200 bg-white pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
+            />
+          </form>
+
+          {/* Filter tabs */}
+          <div className="flex items-center rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
+            {filters.map(({ key, label }) => {
+              const active = filter === key;
+              return (
+                <Link
+                  key={key}
+                  href={filterHref(key)}
+                  className={
+                    active
+                      ? "rounded px-3 py-1.5 text-sm font-medium text-zinc-900 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-50"
+                      : "rounded px-3 py-1.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  }
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Upload */}
+          <Link
+            href="/admin/images/new"
+            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            + Upload
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -54,103 +137,91 @@ export default async function ImagesPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Image</th>
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Profile</th>
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Public</th>
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Created</th>
-              <th className="px-4 py-3 text-left font-medium text-zinc-500 dark:text-zinc-400">Modified</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {!images?.length ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-zinc-400 dark:text-zinc-500">
-                  No images found.
-                </td>
-              </tr>
-            ) : (
-              images.map((img) => (
-                <tr
-                  key={img.id}
-                  className="bg-white transition-colors hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
-                >
-                  <td className="px-4 py-3">
-                    <span title={img.id} className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
-                      {img.id.slice(0, 8)}…
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <a
-                      href={img.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-zinc-700 hover:underline dark:text-zinc-300"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt=""
-                        className="h-8 w-8 flex-shrink-0 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
-                        onError={() => {}}
-                      />
-                      <span className="max-w-[180px] truncate text-xs">{img.url}</span>
-                    </a>
-                  </td>
-                  <td className="px-4 py-3">
-                    {img.profile_id ? (
-                      <span title={img.profile_id} className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                        {img.profile_id.slice(0, 8)}…
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 dark:text-zinc-500">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {img.is_public ? (
-                      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-400">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatDate(img.created_datetime_utc)}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatDate(img.modified_datetime_utc)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-4">
-                      <Link
-                        href={`/admin/images/${img.id}`}
-                        className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-                      >
-                        Edit
-                      </Link>
-                      <DeleteButton id={img.id} />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Grid */}
+      {!images?.length ? (
+        <p className="py-16 text-center text-sm text-zinc-400 dark:text-zinc-500">No images found.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {images.map((img) => (
+            <div
+              key={img.id}
+              className="group relative overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              {/* Thumbnail */}
+              <div className="aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={img.url}
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                />
+              </div>
 
-      {images?.length ? (
-        <p className="mt-3 text-right text-xs text-zinc-400 dark:text-zinc-500">
-          {images.length} {images.length === 1 ? "image" : "images"}
-        </p>
-      ) : null}
+              {/* Badges */}
+              {img.is_public && (
+                <div className="absolute left-2 top-2 flex gap-1">
+                  <span className="rounded px-1.5 py-0.5 text-xs font-semibold bg-blue-500 text-white leading-tight">
+                    Public
+                  </span>
+                </div>
+              )}
+
+              {/* Hover actions */}
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-zinc-950/50 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                <Link
+                  href={`/admin/images/${img.id}`}
+                  className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 shadow hover:bg-zinc-100"
+                >
+                  Edit
+                </Link>
+                <DeleteButton id={img.id} />
+              </div>
+
+              {/* Date */}
+              <div className="px-2 py-2" suppressHydrationWarning>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                  {formatDateShort(img.created_datetime_utc)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            {page > 1 ? (
+              <Link
+                href={pageHref(page - 1)}
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                ← Prev
+              </Link>
+            ) : (
+              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+                ← Prev
+              </span>
+            )}
+            {page < totalPages ? (
+              <Link
+                href={pageHref(page + 1)}
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                Next →
+              </Link>
+            ) : (
+              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+                Next →
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

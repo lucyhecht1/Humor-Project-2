@@ -15,8 +15,10 @@ interface Caption {
 }
 
 type Props = {
-  searchParams: Promise<{ image_id?: string; profile_id?: string }>;
+  searchParams: Promise<{ image_id?: string; profile_id?: string; page?: string }>;
 };
+
+const PAGE_SIZE = 50;
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
@@ -47,21 +49,27 @@ export default async function CaptionsPage({ searchParams }: Props) {
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { image_id = "", profile_id = "" } = await searchParams;
+  const { image_id = "", profile_id = "", page: pageParam = "1" } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam, 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
 
   const supabase = await createClient();
 
   let query = supabase
     .from("captions")
     .select(
-      "id, content, like_count, is_public, is_featured, created_datetime_utc, profile_id, image_id, images(url)"
+      "id, content, like_count, is_public, is_featured, created_datetime_utc, profile_id, image_id, images(url)",
+      { count: "exact" }
     )
-    .order("created_datetime_utc", { ascending: false });
+    .order("created_datetime_utc", { ascending: false })
+    .range(from, to);
 
   if (image_id.trim()) query = query.eq("image_id", image_id.trim());
   if (profile_id.trim()) query = query.eq("profile_id", profile_id.trim());
 
-  const { data: captions, error } = await query.returns<Caption[]>();
+  const { data: captions, error, count } = await query.returns<Caption[]>();
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   const activeFilters = [
     image_id && `image: ${image_id.slice(0, 8)}…`,
@@ -208,7 +216,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
                   </td>
 
                   {/* Created */}
-                  <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">
+                  <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400" suppressHydrationWarning>
                     {formatDate(caption.created_datetime_utc)}
                   </td>
                 </tr>
@@ -218,12 +226,40 @@ export default async function CaptionsPage({ searchParams }: Props) {
         </table>
       </div>
 
-      {captions?.length ? (
-        <p className="mt-3 text-right text-xs text-zinc-400 dark:text-zinc-500">
-          {captions.length} {captions.length === 1 ? "caption" : "captions"}
-          {activeFilters.length ? ` matching filters` : ""}
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          {(count ?? 0).toLocaleString()} total{activeFilters.length ? " matching filters" : ""}
+          {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>
-      ) : null}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            {page > 1 ? (
+              <a
+                href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page - 1) })}`}
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                ← Prev
+              </a>
+            ) : (
+              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+                ← Prev
+              </span>
+            )}
+            {page < totalPages ? (
+              <a
+                href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page + 1) })}`}
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                Next →
+              </a>
+            ) : (
+              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+                Next →
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

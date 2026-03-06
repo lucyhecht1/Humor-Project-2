@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 
 interface Profile {
@@ -21,7 +22,7 @@ type SuperadminResult =
  * All checks happen server-side using getUser() (JWT re-validated with Supabase).
  * The anon key is used so RLS is fully enforced — no policy changes needed.
  */
-export async function requireSuperadmin(): Promise<SuperadminResult> {
+export const requireSuperadmin = cache(async function requireSuperadmin(): Promise<SuperadminResult> {
   const supabase = await createClient();
 
   const {
@@ -41,4 +42,4 @@ export async function requireSuperadmin(): Promise<SuperadminResult> {
   }
 
   return { authorized: true, user, profile };
-}
+});
