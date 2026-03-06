@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { NavSignInButton } from "./_components/NavSignInButton";
 
 // ── types ──────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,12 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-white font-sans" suppressHydrationWarning>
 
+      {/* ── Navbar ───────────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur-md">
+        <span className="text-sm font-bold tracking-tight text-zinc-900">Product of CrackdAI</span>
+        <NavSignInButton />
+      </nav>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="bg-zinc-950 px-6 pb-24 pt-20">
         <div className="mx-auto max-w-5xl">
@@ -91,8 +98,19 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Divider with brand ───────────────────────────────────────────── */}
+      <section className="-mt-12 flex items-center justify-center px-6">
+        <div className="rounded-xl bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 p-[3px]">
+          <span className="flex rounded-lg bg-white px-10 py-3">
+            <span className="font-display bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 bg-clip-text text-7xl tracking-[0.35em] text-transparent md:text-8xl">
+              LLMFAO
+            </span>
+          </span>
+        </div>
+      </section>
+
       {/* ── Images everyone is writing about ─────────────────────────────── */}
-      <section className="px-6 py-20">
+      <section className="px-6 py-16">
         <div className="mx-auto max-w-5xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
             Most talked about
