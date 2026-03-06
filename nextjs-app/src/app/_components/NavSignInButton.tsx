@@ -16,7 +16,7 @@ export function NavSignInButton() {
   return (
     <button
       onClick={handleClick}
-      className="cursor-pointer rounded-full border border-green-200 bg-green-50/80 px-4 py-1.5 text-sm font-medium text-green-700 transition-colors hover:border-green-300 hover:bg-green-100 active:scale-[0.98]"
+      className="cursor-pointer rounded-full border border-orange-200 bg-orange-50/80 px-4 py-1.5 text-sm font-medium text-orange-500 transition-colors hover:border-orange-300 hover:bg-orange-100 hover:text-orange-600 active:scale-[0.98]"
     >
       The Room Where It Happens
     </button>

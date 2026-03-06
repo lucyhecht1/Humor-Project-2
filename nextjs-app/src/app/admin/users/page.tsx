@@ -1,6 +1,6 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
-import { SearchInput } from "./_components/SearchInput";
+import { UsersPageHeader } from "./_components/UsersPageHeader";
 
 interface Profile {
   id: string;
@@ -56,17 +56,7 @@ export default async function UsersPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Users
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Manage accounts and access
-          </p>
-        </div>
-        <SearchInput defaultValue={q} />
-      </div>
+      <UsersPageHeader defaultValue={q} />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

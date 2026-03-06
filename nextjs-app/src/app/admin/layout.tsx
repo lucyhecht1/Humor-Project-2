@@ -19,12 +19,14 @@ export default async function AdminLayout({
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Your account does not have access to this area.
           </p>
-          <a
-            href="/logout"
-            className="mt-6 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Sign out
-          </a>
+          <form action="/logout" method="POST" className="mt-6">
+            <button
+              type="submit"
+              className="inline-block cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
       </main>
     );
@@ -39,15 +41,14 @@ export default async function AdminLayout({
         <div className="flex flex-col px-4 pt-8 pb-6">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-700/80">
-              <span className="text-sm font-semibold text-white">C</span>
+              <span className="text-sm font-semibold text-white">
+                {user.email?.charAt(0)?.toUpperCase() ?? "C"}
+              </span>
             </div>
             <div>
               <h1 className="text-sm font-semibold tracking-tight text-white">
                 Admin
               </h1>
-              <p className="text-[11px] text-zinc-400">
-                Crackd
-              </p>
             </div>
           </div>
         </div>

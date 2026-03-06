@@ -1,3 +1,5 @@
+"use client";
+
 export function SearchInput({ defaultValue }: { defaultValue: string }) {
   return (
     <form action="/admin/users" method="GET" className="flex gap-2">

@@ -75,11 +75,11 @@ export default async function HomePage() {
   // ── render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white font-sans" suppressHydrationWarning>
+    <div className="min-h-screen bg-zinc-950 font-sans" suppressHydrationWarning>
 
       {/* ── Navbar ───────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200 bg-white/80 px-6 py-3 backdrop-blur-md">
-        <span className="text-sm font-bold tracking-tight text-zinc-900">Product of CrackdAI</span>
+      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-800 bg-zinc-950/90 px-6 py-3 backdrop-blur-md">
+        <span className="text-sm font-bold tracking-tight text-zinc-100">Product of CrackdAI</span>
         <NavSignInButton />
       </nav>
 
@@ -101,7 +101,7 @@ export default async function HomePage() {
       {/* ── Divider with brand ───────────────────────────────────────────── */}
       <section className="-mt-12 flex items-center justify-center px-6">
         <div className="rounded-xl bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 p-[3px]">
-          <span className="flex rounded-lg bg-white px-10 py-3">
+          <span className="flex rounded-lg bg-zinc-900 px-10 py-3">
             <span className="font-display bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 bg-clip-text text-7xl tracking-[0.35em] text-transparent md:text-8xl">
               LLMFAO
             </span>
@@ -110,17 +110,17 @@ export default async function HomePage() {
       </section>
 
       {/* ── Images everyone is writing about ─────────────────────────────── */}
-      <section className="px-6 py-16">
+      <section className="bg-zinc-950 px-6 py-16">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Most talked about
           </p>
-          <h2 className="mt-2 text-3xl font-bold text-zinc-900">
+          <h2 className="mt-2 text-3xl font-bold text-white">
             The images everyone is writing about.
           </h2>
 
           {topImages.length === 0 ? (
-            <p className="mt-8 text-sm text-zinc-400">No data yet.</p>
+            <p className="mt-8 text-sm text-zinc-500">No data yet.</p>
           ) : (
             <div className="mt-10 space-y-3">
               {/* Top row: #1 wide + #2 & #3 stacked */}
@@ -178,17 +178,17 @@ export default async function HomePage() {
       </section>
 
       {/* ── Crowd favorites ──────────────────────────────────────────────── */}
-      <section className="bg-zinc-50 px-6 py-20">
+      <section className="bg-zinc-900 px-6 py-20">
         <div className="mx-auto max-w-5xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Crowd favorites
           </p>
-          <h2 className="mt-2 text-3xl font-bold text-zinc-900">
+          <h2 className="mt-2 text-3xl font-bold text-white">
             The captions people love most.
           </h2>
 
           {topLiked.length === 0 ? (
-            <p className="mt-8 text-sm text-zinc-400">No liked captions yet.</p>
+            <p className="mt-8 text-sm text-zinc-500">No liked captions yet.</p>
           ) : (
             <div className="mt-10 space-y-4">
               {/* #1 — featured editorial card */}
@@ -219,19 +219,19 @@ export default async function HomePage() {
               {topLiked.length > 1 && (
                 <div className="grid grid-cols-2 gap-4">
                   {topLiked.slice(1).map(({ id, content, likeCount, imageUrl }) => (
-                    <div key={id} className="flex gap-4 rounded-xl border border-zinc-200 bg-white p-5">
-                      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+                    <div key={id} className="flex gap-4 rounded-xl border border-zinc-700 bg-zinc-800 p-5">
+                      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-zinc-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imageUrl} alt="" className="h-full w-full object-cover" />
                       </div>
                       <div className="flex flex-1 flex-col justify-between">
-                        <p className="text-sm leading-relaxed text-zinc-700">
+                        <p className="text-sm leading-relaxed text-zinc-300">
                           &ldquo;{content.length > 110 ? content.slice(0, 110) + "…" : content}&rdquo;
                         </p>
                         <div className="mt-3 flex items-center gap-1.5">
                           <span className="text-red-400">♥</span>
-                          <span className="text-sm font-semibold text-zinc-700 tabular-nums">{n(likeCount)}</span>
-                          <span className="text-xs text-zinc-400">likes</span>
+                          <span className="text-sm font-semibold text-zinc-200 tabular-nums">{n(likeCount)}</span>
+                          <span className="text-xs text-zinc-500">likes</span>
                         </div>
                       </div>
                     </div>
@@ -244,7 +244,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── footer ───────────────────────────────────────────────────────── */}
-      <footer className="border-t border-zinc-100 px-6 py-8 text-center text-xs text-zinc-400">
+      <footer className="border-t border-zinc-800 bg-zinc-950 px-6 py-8 text-center text-xs text-zinc-500">
         Stats are live — data reflects what's visible to the public.
       </footer>
     </div>
