@@ -29,11 +29,9 @@ export default async function HomePage() {
   const supabase = await createClient();
 
   const [
-    { count: profileCount },
     { data: images, count: imageCount },
     { data: captions, count: captionCount },
   ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("images").select("id, url, is_public", { count: "exact" }).returns<ImageRow[]>(),
     supabase.from("captions").select("id, image_id, content, like_count, is_public", { count: "exact" }).returns<CaptionRow[]>(),
   ]);
@@ -50,6 +48,8 @@ export default async function HomePage() {
 
   const avgCaptionsPerImage =
     captionsByImage.size > 0 ? (caps.length / (imageCount ?? 1)).toFixed(1) : "0";
+
+  const totalLikes = caps.reduce((sum, c) => sum + Math.max(0, c.like_count ?? 0), 0);
 
   // top 7 images by caption count
   const imageUrlMap = new Map(imgs.map((img) => [img.id, img.url]));
@@ -91,9 +91,9 @@ export default async function HomePage() {
           </p>
           {/* Narrative headline */}
           <h1 className="mt-4 max-w-3xl text-5xl font-bold leading-tight tracking-tight text-white">
-            <span className="text-orange-400">{n(profileCount)}</span> creators.<br />
             <span className="text-orange-400">{n(imageCount)}</span> images.<br />
-            <span className="text-orange-400">{n(captionCount)}</span> captions written.
+            <span className="text-orange-400">{n(captionCount)}</span> captions written.<br />
+            <span className="text-orange-400">{n(totalLikes)}</span> likes given.
           </h1>
         </div>
       </section>
