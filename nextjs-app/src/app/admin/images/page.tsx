@@ -76,7 +76,7 @@ export default async function ImagesPage({ searchParams }: Props) {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Images</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Images</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             {(count ?? 0).toLocaleString("en-US")} images total
           </p>
@@ -97,12 +97,12 @@ export default async function ImagesPage({ searchParams }: Props) {
               name="q"
               defaultValue={q}
               placeholder="Search images..."
-              className="h-9 w-56 rounded-md border border-zinc-200 bg-white pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
+              className="h-10 w-56 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 text-sm text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
             />
           </form>
 
           {/* Filter tabs */}
-          <div className="flex items-center rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
             {filters.map(({ key, label }) => {
               const active = filter === key;
               return (
@@ -111,8 +111,8 @@ export default async function ImagesPage({ searchParams }: Props) {
                   href={filterHref(key)}
                   className={
                     active
-                      ? "rounded px-3 py-1.5 text-sm font-medium text-zinc-900 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-50"
-                      : "rounded px-3 py-1.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      ? "cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-zinc-900 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-50"
+                      : "cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
                   }
                 >
                   {label}
@@ -124,7 +124,7 @@ export default async function ImagesPage({ searchParams }: Props) {
           {/* Upload */}
           <Link
             href="/admin/images/new"
-            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             + Upload
           </Link>
@@ -132,20 +132,22 @@ export default async function ImagesPage({ searchParams }: Props) {
       </div>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-400">
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">
           Failed to load images: {error.message}
         </p>
       )}
 
       {/* Grid */}
       {!images?.length ? (
-        <p className="py-16 text-center text-sm text-zinc-400 dark:text-zinc-500">No images found.</p>
+        <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No images found.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {images.map((img) => (
             <div
               key={img.id}
-              className="group relative overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+              className="group relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow dark:border-zinc-800 dark:bg-zinc-900"
             >
               {/* Thumbnail */}
               <div className="aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800">
@@ -190,32 +192,32 @@ export default async function ImagesPage({ searchParams }: Props) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Page {page} of {totalPages}
           </p>
           <div className="flex items-center gap-2">
             {page > 1 ? (
               <Link
                 href={pageHref(page - 1)}
-                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >
                 ← Prev
               </Link>
             ) : (
-              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">
                 ← Prev
               </span>
             )}
             {page < totalPages ? (
               <Link
                 href={pageHref(page + 1)}
-                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >
                 Next →
               </Link>
             ) : (
-              <span className="rounded-md border border-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-300 dark:border-zinc-800 dark:text-zinc-600">
+              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">
                 Next →
               </span>
             )}
