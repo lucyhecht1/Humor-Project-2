@@ -126,9 +126,9 @@ export default async function HomePage() {
               {/* Top row: #1 wide + #2 & #3 stacked */}
               <div className="grid grid-cols-3 gap-3">
                 {topImages[0] && (
-                  <div className="group relative col-span-2 overflow-hidden rounded-2xl bg-zinc-200">
+                  <div className="group relative col-span-2 aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-200">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={topImages[0].url!} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <img src={topImages[0].url!} alt="" className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />
                     <div className="absolute bottom-5 left-5">
                       <p className="text-xs font-bold uppercase tracking-widest text-orange-400">#1</p>
