@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { DeleteCaptionExampleButton } from "./_components/DeleteCaptionExampleButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface CaptionExample {
   id: number;
@@ -14,7 +15,7 @@ interface CaptionExample {
 }
 
 type Props = {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 50;
@@ -26,19 +27,29 @@ function formatDate(iso: string) {
 }
 
 export default async function CaptionExamplesPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { q = "", page: pageParam = "1" } = await searchParams;
+  const { q = "", page: pageParam = "1", sort = "priority", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+
+  const columnMap: Record<string, string> = {
+    caption: "caption",
+    description: "image_description",
+    priority: "priority",
+    image_id: "image_id",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "priority";
 
   const supabase = await createClient();
   let query = supabase
     .from("caption_examples")
     .select("id, caption, image_description, priority, image_id, created_datetime_utc", { count: "exact" })
-    .order("priority", { ascending: false })
+    .order(sortColumn, { ascending: dir === "asc" })
     .range(from, to);
 
   if (q.trim()) query = query.ilike("caption", `%${q.trim()}%`);
@@ -49,9 +60,13 @@ export default async function CaptionExamplesPage({ searchParams }: Props) {
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    if (sort !== "priority") params.set("sort", sort);
+    if (dir !== "desc") params.set("dir", dir);
     params.set("page", String(p));
     return `/admin/caption-examples?${params.toString()}`;
   }
+
+  const preserveParams = { q };
 
   return (
     <div>
@@ -83,11 +98,11 @@ export default async function CaptionExamplesPage({ searchParams }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Caption</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Image description</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Priority</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Image ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              <SortableHeader column="caption" label="Caption" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="description" label="Image description" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="priority" label="Priority" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="image_id" label="Image ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
               <th className="px-5 py-3.5" />
             </tr>
           </thead>

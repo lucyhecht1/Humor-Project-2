@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { updateFlavorMix, type MixFormState } from "../actions";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface MixRow {
   id: number;
@@ -10,7 +11,7 @@ interface MixRow {
   humor_flavors: { slug: string } | null;
 }
 
-export function FlavorMixForm({ rows }: { rows: MixRow[] }) {
+export function FlavorMixForm({ rows, currentSort, currentDir }: { rows: MixRow[]; currentSort: string; currentDir: string }) {
   const [state, formAction, isPending] = useActionState<MixFormState, FormData>(
     updateFlavorMix,
     null
@@ -35,15 +36,9 @@ export function FlavorMixForm({ rows }: { rows: MixRow[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                ID
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Flavor
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Caption Count
-              </th>
+              <SortableHeader column="id" label="ID" currentSort={currentSort} currentDir={currentDir} defaultDir="asc" />
+              <SortableHeader column="flavor" label="Flavor" currentSort={currentSort} currentDir={currentDir} defaultDir="asc" />
+              <SortableHeader column="count" label="Caption Count" currentSort={currentSort} currentDir={currentDir} defaultDir="desc" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

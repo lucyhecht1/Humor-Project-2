@@ -1,6 +1,8 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface HumorFlavor {
   id: number;
@@ -9,32 +11,55 @@ interface HumorFlavor {
   created_datetime_utc: string;
 }
 
+type Props = {
+  searchParams: Promise<{ q?: string; sort?: string; dir?: string }>;
+};
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
   return `${mon} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
-export default async function FlavorsPage() {
+export default async function FlavorsPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
+  const { q = "", sort = "id", dir = "asc" } = await searchParams;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    slug: "slug",
+    description: "description",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "id";
+
   const supabase = await createClient();
-  const { data: flavors, error } = await supabase
+  let query = supabase
     .from("humor_flavors")
-    .select("id, slug, description, created_datetime_utc")
-    .order("id")
-    .returns<HumorFlavor[]>();
+    .select("id, slug, description, created_datetime_utc", { count: "exact" })
+    .order(sortColumn, { ascending: dir === "asc" });
+
+  if (q.trim()) query = query.ilike("slug", `%${q.trim()}%`);
+
+  const { data: flavors, error, count } = await query.returns<HumorFlavor[]>();
+
+  const preserveParams = { q };
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Humor Flavors
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {(flavors?.length ?? 0).toLocaleString()} flavors total
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Humor Flavors
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {(count ?? 0).toLocaleString()} flavors{q ? " matching" : " total"}
+          </p>
+        </div>
+        <LiveSearchInput defaultValue={q} placeholder="Search slugs…" />
       </div>
 
       {error && (
@@ -47,10 +72,10 @@ export default async function FlavorsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Slug</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Description</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="slug" label="Slug" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="description" label="Description" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
               <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Steps</th>
             </tr>
           </thead>
@@ -58,7 +83,7 @@ export default async function FlavorsPage() {
             {!flavors?.length ? (
               <tr>
                 <td colSpan={5} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  No flavors found.
+                  {q ? `No flavors matching "${q}".` : "No flavors found."}
                 </td>
               </tr>
             ) : (

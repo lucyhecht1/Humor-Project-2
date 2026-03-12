@@ -1,6 +1,8 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface LlmPromptChain {
   id: number;
@@ -9,7 +11,7 @@ interface LlmPromptChain {
 }
 
 type Props = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 100;
@@ -27,31 +29,48 @@ function formatDate(iso: string) {
 }
 
 export default async function LlmPromptChainsPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { page: pageParam = "1" } = await searchParams;
+  const { page: pageParam = "1", q = "", sort = "created", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
+  const columnMap: Record<string, string> = {
+    id: "id",
+    request: "caption_request_id",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "created_datetime_utc";
+
   const supabase = await createClient();
-  const { data: chains, error, count } = await supabase
+  const requestId = q.trim() ? parseInt(q.trim(), 10) : NaN;
+  let query = supabase
     .from("llm_prompt_chains")
     .select("id, created_datetime_utc, caption_request_id", { count: "exact" })
-    .order("created_datetime_utc", { ascending: false })
-    .range(from, to)
-    .returns<LlmPromptChain[]>();
+    .order(sortColumn, { ascending: dir === "asc" })
+    .range(from, to);
+
+  if (!isNaN(requestId)) query = query.eq("caption_request_id", requestId);
+
+  const { data: chains, error, count } = await query.returns<LlmPromptChain[]>();
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
+  const preserveParams = { q };
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">LLM Prompt Chains</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {(count ?? 0).toLocaleString()} chains total
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">LLM Prompt Chains</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {(count ?? 0).toLocaleString()} chains{q ? " matching" : " total"}
+          </p>
+        </div>
+        <LiveSearchInput defaultValue={q} placeholder="Filter by request ID…" />
       </div>
 
       {error && (
@@ -64,15 +83,17 @@ export default async function LlmPromptChainsPage({ searchParams }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Caption request</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="request" label="Caption request" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {!chains?.length ? (
               <tr>
-                <td colSpan={3} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">No prompt chains found.</td>
+                <td colSpan={3} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                {q ? `No chains for request ID ${q}.` : "No prompt chains found."}
+              </td>
               </tr>
             ) : (
               chains.map((c) => (
@@ -96,12 +117,12 @@ export default async function LlmPromptChainsPage({ searchParams }: Props) {
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             {page > 1 ? (
-              <Link href={`?page=${page - 1}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">← Prev</Link>
+              <Link href={`?${new URLSearchParams({ ...(q && { q }), ...(sort !== "created" && { sort }), ...(dir !== "desc" && { dir }), page: String(page - 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">← Prev</Link>
             ) : (
               <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">← Prev</span>
             )}
             {page < totalPages ? (
-              <Link href={`?page=${page + 1}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">Next →</Link>
+              <Link href={`?${new URLSearchParams({ ...(q && { q }), ...(sort !== "created" && { sort }), ...(dir !== "desc" && { dir }), page: String(page + 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">Next →</Link>
             ) : (
               <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">Next →</span>
             )}

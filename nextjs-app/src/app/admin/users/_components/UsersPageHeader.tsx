@@ -1,3 +1,5 @@
+"use client";
+
 import { SearchInput } from "./SearchInput";
 
 export function UsersPageHeader({ defaultValue }: { defaultValue: string }) {

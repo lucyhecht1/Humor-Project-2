@@ -1,6 +1,7 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
-import { UsersPageHeader } from "./_components/UsersPageHeader";
+import { SearchInput } from "./_components/SearchInput";
+import { SortableHeader } from "./_components/SortableHeader";
 
 interface Profile {
   id: string;
@@ -12,7 +13,7 @@ interface Profile {
 }
 
 type Props = {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 100;
@@ -32,19 +33,30 @@ function formatCreatedUtc(iso: string): string {
 }
 
 export default async function UsersPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { q = "", page: pageParam = "1" } = await searchParams;
+  const { q = "", page: pageParam = "1", sort = "created", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+
+  const columnMap: Record<string, string> = {
+    name: "first_name",
+    id: "id",
+    email: "email",
+    superadmin: "is_superadmin",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "created_datetime_utc";
+  const ascending = dir === "asc";
 
   const supabase = await createClient();
   let query = supabase
     .from("profiles")
     .select("id, email, first_name, last_name, is_superadmin, created_datetime_utc", { count: "exact" })
-    .order("created_datetime_utc", { ascending: false })
+    .order(sortColumn, { ascending })
     .range(from, to);
 
   if (q.trim()) {
@@ -56,7 +68,17 @@ export default async function UsersPage({ searchParams }: Props) {
 
   return (
     <div>
-      <UsersPageHeader defaultValue={q} />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Users
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Manage accounts and access
+          </p>
+        </div>
+        <SearchInput defaultValue={q} />
+      </div>
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">
@@ -65,24 +87,21 @@ export default async function UsersPage({ searchParams }: Props) {
       )}
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            <col className="w-[15%]" />
+            <col className="w-[10%]" />
+            <col className="w-[35%]" />
+            <col className="w-[10%]" />
+            <col className="w-[30%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Name
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                ID
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Email
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Superadmin
-              </th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Created
-              </th>
+              <SortableHeader column="name" label="Name" defaultDir="asc" currentSort={sort} currentDir={dir} preserveParams={{ q }} />
+              <SortableHeader column="id" label="ID" defaultDir="asc" currentSort={sort} currentDir={dir} preserveParams={{ q }} />
+              <SortableHeader column="email" label="Email" defaultDir="asc" currentSort={sort} currentDir={dir} preserveParams={{ q }} />
+              <SortableHeader column="superadmin" label="Superadmin" defaultDir="desc" currentSort={sort} currentDir={dir} preserveParams={{ q }} />
+              <SortableHeader column="created" label="Created" defaultDir="desc" currentSort={sort} currentDir={dir} preserveParams={{ q }} />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

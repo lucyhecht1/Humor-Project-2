@@ -2,6 +2,8 @@ import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { DeleteEmailButton } from "./_components/DeleteEmailButton";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface WhitelistedEmail {
   id: number;
@@ -10,33 +12,58 @@ interface WhitelistedEmail {
   modified_datetime_utc: string | null;
 }
 
+type Props = {
+  searchParams: Promise<{ q?: string; sort?: string; dir?: string }>;
+};
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
   return `${mon} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
-export default async function WhitelistedEmailsPage() {
+export default async function WhitelistedEmailsPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
+  const { q = "", sort = "email", dir = "asc" } = await searchParams;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    email: "email_address",
+    created: "created_datetime_utc",
+    modified: "modified_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "email_address";
+
   const supabase = await createClient();
-  const { data: emails, error } = await supabase
+  let query = supabase
     .from("whitelist_email_addresses")
-    .select("id, email_address, created_datetime_utc, modified_datetime_utc")
-    .order("email_address")
-    .returns<WhitelistedEmail[]>();
+    .select("id, email_address, created_datetime_utc, modified_datetime_utc", { count: "exact" })
+    .order(sortColumn, { ascending: dir === "asc" });
+
+  if (q.trim()) query = query.ilike("email_address", `%${q.trim()}%`);
+
+  const { data: emails, error, count } = await query.returns<WhitelistedEmail[]>();
+
+  const preserveParams = { q };
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Whitelisted Emails</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{(emails?.length ?? 0)} addresses total</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {(count ?? 0)} addresses{q ? " matching" : " total"}
+          </p>
         </div>
-        <Link href="/admin/whitelisted-emails/new" className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-          + Add email
-        </Link>
+        <div className="flex items-center gap-3">
+          <LiveSearchInput defaultValue={q} placeholder="Search emails…" />
+          <Link href="/admin/whitelisted-emails/new" className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+            + Add email
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -49,17 +76,19 @@ export default async function WhitelistedEmailsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Email</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Added</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Modified</th>
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="email" label="Email" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Added" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="modified" label="Modified" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
               <th className="px-5 py-3.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {!emails?.length ? (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">No whitelisted emails found.</td>
+                <td colSpan={5} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  {q ? `No emails matching "${q}".` : "No whitelisted emails found."}
+                </td>
               </tr>
             ) : (
               emails.map((e) => (

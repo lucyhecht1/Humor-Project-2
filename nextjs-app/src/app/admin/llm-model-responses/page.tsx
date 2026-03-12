@@ -2,6 +2,7 @@ import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface LlmModelResponse {
   id: string;
@@ -18,7 +19,7 @@ interface LlmModelResponse {
 }
 
 type Props = {
-  searchParams: Promise<{ page?: string; request_id?: string }>;
+  searchParams: Promise<{ page?: string; request_id?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 50;
@@ -32,13 +33,28 @@ function formatDate(iso: string) {
 }
 
 export default async function LlmModelResponsesPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { page: pageParam = "1", request_id = "" } = await searchParams;
+  const { page: pageParam = "1", request_id = "", sort = "created", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    model: "llm_model_id",
+    flavor: "humor_flavor_id",
+    step: "humor_flavor_step_id",
+    request: "caption_request_id",
+    chain: "llm_prompt_chain_id",
+    time: "processing_time_seconds",
+    temp: "llm_temperature",
+    profile: "profile_id",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "created_datetime_utc";
 
   const supabase = await createClient();
   let query = supabase
@@ -47,7 +63,7 @@ export default async function LlmModelResponsesPage({ searchParams }: Props) {
       "id, created_datetime_utc, llm_model_id, humor_flavor_id, processing_time_seconds, llm_temperature, profile_id, caption_request_id, llm_prompt_chain_id, humor_flavor_step_id, llm_model_response",
       { count: "exact" }
     )
-    .order("created_datetime_utc", { ascending: false })
+    .order(sortColumn, { ascending: dir === "asc" })
     .range(from, to);
 
   if (request_id.trim()) query = query.eq("caption_request_id", request_id.trim());
@@ -58,9 +74,13 @@ export default async function LlmModelResponsesPage({ searchParams }: Props) {
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (request_id) params.set("request_id", request_id);
+    if (sort !== "created") params.set("sort", sort);
+    if (dir !== "desc") params.set("dir", dir);
     params.set("page", String(p));
     return `/admin/llm-model-responses?${params.toString()}`;
   }
+
+  const preserveParams = { request_id };
 
   return (
     <div>
@@ -84,9 +104,18 @@ export default async function LlmModelResponsesPage({ searchParams }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              {["ID", "Model", "Flavor", "Step", "Request", "Chain", "Time (s)", "Temp", "Profile", "Response", "Created", ""].map((h) => (
-                <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{h}</th>
-              ))}
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="model" label="Model" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="flavor" label="Flavor" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="step" label="Step" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="request" label="Request" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="chain" label="Chain" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="time" label="Time (s)" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="temp" label="Temp" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="profile" label="Profile" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 whitespace-nowrap">Response</th>
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <th className="px-5 py-3.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

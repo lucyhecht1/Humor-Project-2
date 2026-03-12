@@ -1,6 +1,8 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import { FilterBar } from "./_components/FilterBar";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface Caption {
   id: string;
@@ -18,7 +20,7 @@ interface Caption {
 }
 
 type Props = {
-  searchParams: Promise<{ image_id?: string; profile_id?: string; page?: string }>;
+  searchParams: Promise<{ image_id?: string; profile_id?: string; q?: string; page?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 50;
@@ -63,13 +65,29 @@ function NumCell({ value }: { value: number | null }) {
 }
 
 export default async function CaptionsPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { image_id = "", profile_id = "", page: pageParam = "1" } = await searchParams;
+  const { image_id = "", profile_id = "", q = "", page: pageParam = "1", sort = "created", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    content: "content",
+    likes: "like_count",
+    public: "is_public",
+    featured: "is_featured",
+    profile: "profile_id",
+    image_id: "image_id",
+    flavor: "humor_flavor_id",
+    request: "caption_request_id",
+    chain: "llm_prompt_chain_id",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "created_datetime_utc";
 
   const supabase = await createClient();
 
@@ -79,19 +97,23 @@ export default async function CaptionsPage({ searchParams }: Props) {
       "id, content, like_count, is_public, is_featured, created_datetime_utc, profile_id, image_id, humor_flavor_id, caption_request_id, llm_prompt_chain_id, images(url)",
       { count: "exact" }
     )
-    .order("created_datetime_utc", { ascending: false })
+    .order(sortColumn, { ascending: dir === "asc" })
     .range(from, to);
 
   if (image_id.trim()) query = query.eq("image_id", image_id.trim());
   if (profile_id.trim()) query = query.eq("profile_id", profile_id.trim());
+  if (q.trim()) query = query.ilike("content", `%${q.trim()}%`);
 
   const { data: captions, error, count } = await query.returns<Caption[]>();
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   const activeFilters = [
+    q && `content: "${q}"`,
     image_id && `image: ${image_id.slice(0, 8)}…`,
     profile_id && `profile: ${profile_id.slice(0, 8)}…`,
   ].filter(Boolean);
+
+  const preserveParams = { q, image_id, profile_id };
 
   return (
     <div>
@@ -103,6 +125,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
               {(count ?? 0).toLocaleString()} captions total
             </p>
           </div>
+          <LiveSearchInput defaultValue={q} placeholder="Search content…" />
         </div>
         <FilterBar imageId={image_id} profileId={profile_id} />
         {activeFilters.length > 0 && (
@@ -122,11 +145,18 @@ export default async function CaptionsPage({ searchParams }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              {["ID", "Image", "Content", "Likes", "Public", "Featured", "Profile", "Image ID", "Flavor", "Request", "Chain", "Created"].map((h) => (
-                <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 whitespace-nowrap">Image</th>
+              <SortableHeader column="content" label="Content" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="likes" label="Likes" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="public" label="Public" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="featured" label="Featured" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
+              <SortableHeader column="profile" label="Profile" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="image_id" label="Image ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="flavor" label="Flavor" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="request" label="Request" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="chain" label="Chain" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -189,12 +219,12 @@ export default async function CaptionsPage({ searchParams }: Props) {
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             {page > 1 ? (
-              <a href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page - 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">← Prev</a>
+              <a href={`?${new URLSearchParams({ ...(q && { q }), ...(image_id && { image_id }), ...(profile_id && { profile_id }), ...(sort !== "created" && { sort }), ...(dir !== "desc" && { dir }), page: String(page - 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">← Prev</a>
             ) : (
               <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">← Prev</span>
             )}
             {page < totalPages ? (
-              <a href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page + 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">Next →</a>
+              <a href={`?${new URLSearchParams({ ...(q && { q }), ...(image_id && { image_id }), ...(profile_id && { profile_id }), ...(sort !== "created" && { sort }), ...(dir !== "desc" && { dir }), page: String(page + 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">Next →</a>
             ) : (
               <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">Next →</span>
             )}

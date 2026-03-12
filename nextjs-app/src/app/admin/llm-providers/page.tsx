@@ -2,6 +2,8 @@ import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { DeleteProviderButton } from "./_components/DeleteProviderButton";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface LlmProvider {
   id: number;
@@ -9,22 +11,41 @@ interface LlmProvider {
   created_datetime_utc: string;
 }
 
+type Props = {
+  searchParams: Promise<{ q?: string; sort?: string; dir?: string }>;
+};
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
   return `${mon} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
-export default async function LlmProvidersPage() {
+export default async function LlmProvidersPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
+  const { q = "", sort = "id", dir = "asc" } = await searchParams;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    name: "name",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "id";
+
   const supabase = await createClient();
-  const { data: providers, error } = await supabase
+  let query = supabase
     .from("llm_providers")
-    .select("id, name, created_datetime_utc")
-    .order("id")
-    .returns<LlmProvider[]>();
+    .select("id, name, created_datetime_utc", { count: "exact" })
+    .order(sortColumn, { ascending: dir === "asc" });
+
+  if (q.trim()) query = query.ilike("name", `%${q.trim()}%`);
+
+  const { data: providers, error, count } = await query.returns<LlmProvider[]>();
+
+  const preserveParams = { q };
 
   return (
     <div>
@@ -32,12 +53,15 @@ export default async function LlmProvidersPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">LLM Providers</h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {(providers?.length ?? 0)} providers total
+            {(count ?? 0)} providers{q ? " matching" : " total"}
           </p>
         </div>
-        <Link href="/admin/llm-providers/new" className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-          + New provider
-        </Link>
+        <div className="flex items-center gap-3">
+          <LiveSearchInput defaultValue={q} placeholder="Search providers…" />
+          <Link href="/admin/llm-providers/new" className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+            + New provider
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -50,16 +74,18 @@ export default async function LlmProvidersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Name</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="name" label="Name" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
               <th className="px-5 py-3.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {!providers?.length ? (
               <tr>
-                <td colSpan={4} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">No providers found.</td>
+                <td colSpan={4} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  {q ? `No providers matching "${q}".` : "No providers found."}
+                </td>
               </tr>
             ) : (
               providers.map((p) => (

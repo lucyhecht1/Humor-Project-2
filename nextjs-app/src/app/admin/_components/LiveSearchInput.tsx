@@ -13,6 +13,7 @@ const inputClass =
   "h-10 w-56 rounded-lg border border-zinc-200 bg-white pl-9 pr-8 text-sm text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500";
 
 function LiveSearchInputInner({ defaultValue, placeholder = "Search…", paramName = "q" }: Props) {
+  "use no memo";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

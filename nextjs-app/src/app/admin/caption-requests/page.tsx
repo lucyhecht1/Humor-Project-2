@@ -1,6 +1,8 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 
 interface CaptionRequest {
   id: number;
@@ -10,7 +12,7 @@ interface CaptionRequest {
 }
 
 type Props = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 100;
@@ -28,37 +30,58 @@ function formatDate(iso: string) {
 }
 
 export default async function CaptionRequestsPage({ searchParams }: Props) {
+  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { page: pageParam = "1" } = await searchParams;
+  const { page: pageParam = "1", q = "", sort = "created", dir = "desc" } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
+  const columnMap: Record<string, string> = {
+    id: "id",
+    profile: "profile_id",
+    image: "image_id",
+    created: "created_datetime_utc",
+  };
+  const sortColumn = columnMap[sort] ?? "created_datetime_utc";
+
   const supabase = await createClient();
-  const { data: requests, error, count } = await supabase
+  let query = supabase
     .from("caption_requests")
     .select("id, created_datetime_utc, profile_id, image_id", { count: "exact" })
-    .order("created_datetime_utc", { ascending: false })
-    .range(from, to)
-    .returns<CaptionRequest[]>();
+    .order(sortColumn, { ascending: dir === "asc" })
+    .range(from, to);
 
+  if (q.trim()) query = query.ilike("profile_id", `%${q.trim()}%`);
+
+  const { data: requests, error, count } = await query.returns<CaptionRequest[]>();
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   function pageHref(p: number) {
-    return `/admin/caption-requests?page=${p}`;
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (sort !== "created") params.set("sort", sort);
+    if (dir !== "desc") params.set("dir", dir);
+    params.set("page", String(p));
+    return `/admin/caption-requests?${params.toString()}`;
   }
+
+  const preserveParams = { q };
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Caption Requests
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {(count ?? 0).toLocaleString()} requests total
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Caption Requests
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            {(count ?? 0).toLocaleString()} requests{q ? " matching" : " total"}
+          </p>
+        </div>
+        <LiveSearchInput defaultValue={q} placeholder="Filter by profile ID…" />
       </div>
 
       {error && (
@@ -71,17 +94,17 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Profile</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Image</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="profile" label="Profile" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="image" label="Image" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {!requests?.length ? (
               <tr>
                 <td colSpan={4} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  No caption requests found.
+                  {q ? `No requests matching "${q}".` : "No caption requests found."}
                 </td>
               </tr>
             ) : (

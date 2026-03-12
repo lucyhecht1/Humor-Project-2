@@ -9,15 +9,28 @@ interface MixRow {
   humor_flavors: { slug: string } | null;
 }
 
-export default async function FlavorMixPage() {
+type Props = {
+  searchParams: Promise<{ sort?: string; dir?: string }>;
+};
+
+export default async function FlavorMixPage({ searchParams }: Props) {
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
+
+  const { sort = "flavor", dir = "asc" } = await searchParams;
+
+  const columnMap: Record<string, string> = {
+    id: "id",
+    flavor: "humor_flavor_id",
+    count: "caption_count",
+  };
+  const sortColumn = columnMap[sort] ?? "humor_flavor_id";
 
   const supabase = await createClient();
   const { data: rows, error } = await supabase
     .from("humor_flavor_mix")
     .select("id, caption_count, humor_flavor_id, humor_flavors(slug)")
-    .order("humor_flavor_id")
+    .order(sortColumn, { ascending: dir === "asc" })
     .returns<MixRow[]>();
 
   return (
@@ -37,7 +50,7 @@ export default async function FlavorMixPage() {
         </p>
       )}
 
-      <FlavorMixForm rows={rows ?? []} />
+      <FlavorMixForm rows={rows ?? []} currentSort={sort} currentDir={dir} />
     </div>
   );
 }
