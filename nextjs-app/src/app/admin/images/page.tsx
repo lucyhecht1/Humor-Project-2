@@ -2,14 +2,24 @@ import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { DeleteButton } from "./_components/DeleteButton";
+import { EditImageButton } from "./_components/EditImageButton";
+import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 
 interface Image {
   id: string;
   url: string;
   profile_id: string | null;
   is_public: boolean;
+  is_common_use: boolean;
+  additional_context: string | null;
+  image_description: string | null;
   created_datetime_utc: string | null;
   modified_datetime_utc: string | null;
+}
+
+interface ProfileOption {
+  id: string;
+  email: string;
 }
 
 type Props = {
@@ -40,14 +50,17 @@ export default async function ImagesPage({ searchParams }: Props) {
   const supabase = await createClient();
   let query = supabase
     .from("images")
-    .select("id, url, profile_id, is_public, created_datetime_utc, modified_datetime_utc", { count: "exact" })
+    .select("id, url, profile_id, is_public, is_common_use, additional_context, image_description, created_datetime_utc, modified_datetime_utc", { count: "exact" })
     .order("created_datetime_utc", { ascending: false })
     .range(from, to);
 
   if (q.trim()) query = query.ilike("url", `%${q.trim()}%`);
   if (filter === "public") query = query.eq("is_public", true);
 
-  const { data: images, error, count } = await query.returns<Image[]>();
+  const [{ data: images, error, count }, { data: profiles }] = await Promise.all([
+    query.returns<Image[]>(),
+    supabase.from("profiles").select("id, email").order("email").returns<ProfileOption[]>(),
+  ]);
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   function filterHref(f: string) {
@@ -84,22 +97,7 @@ export default async function ImagesPage({ searchParams }: Props) {
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
-          <form action="/admin/images" method="GET" className="relative">
-            {filter !== "all" && <input type="hidden" name="filter" value={filter} />}
-            <svg
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input
-              type="text"
-              name="q"
-              defaultValue={q}
-              placeholder="Search images..."
-              className="h-10 w-56 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 text-sm text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
-            />
-          </form>
+          <LiveSearchInput defaultValue={q} placeholder="Search images..." />
 
           {/* Filter tabs */}
           <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
@@ -170,12 +168,7 @@ export default async function ImagesPage({ searchParams }: Props) {
 
               {/* Hover actions */}
               <div className="absolute inset-0 flex items-center justify-center gap-2 bg-zinc-950/50 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                <Link
-                  href={`/admin/images/${img.id}`}
-                  className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 shadow hover:bg-zinc-100"
-                >
-                  Edit
-                </Link>
+                <EditImageButton image={img} profiles={profiles ?? []} />
                 <DeleteButton id={img.id} />
               </div>
 

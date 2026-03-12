@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useRef } from "react";
 
 interface Props {
@@ -10,48 +10,56 @@ interface Props {
 
 export function FilterBar({ imageId, profileId }: Props) {
   const router = useRouter();
-  const imageRef = useRef<HTMLInputElement>(null);
-  const profileRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const imageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    const img = imageRef.current?.value.trim() ?? "";
-    const prof = profileRef.current?.value.trim() ?? "";
-    if (img) params.set("image_id", img);
-    if (prof) params.set("profile_id", prof);
+  function pushParams(overrides: Record<string, string>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v.trim()) params.set(k, v.trim());
+      else params.delete(k);
+    }
+    params.delete("page");
     const qs = params.toString();
-    router.push(qs ? `/admin/captions?${qs}` : "/admin/captions");
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    if (imageTimer.current) clearTimeout(imageTimer.current);
+    imageTimer.current = setTimeout(() => pushParams({ image_id: val }), 300);
+  }
+
+  function handleProfileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    if (profileTimer.current) clearTimeout(profileTimer.current);
+    profileTimer.current = setTimeout(() => pushParams({ profile_id: val }), 300);
   }
 
   function handleClear() {
-    router.push("/admin/captions");
+    router.push(pathname);
   }
 
   const hasFilters = imageId || profileId;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <input
-        ref={imageRef}
         type="text"
         defaultValue={imageId}
+        onChange={handleImageChange}
         placeholder="Filter by image ID…"
         className="h-10 w-64 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
       />
       <input
-        ref={profileRef}
         type="text"
         defaultValue={profileId}
+        onChange={handleProfileChange}
         placeholder="Filter by profile ID…"
         className="h-10 w-64 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-500"
       />
-      <button
-        type="submit"
-        className="h-10 cursor-pointer rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
-        Filter
-      </button>
       <button
         type="button"
         onClick={handleClear}
@@ -59,6 +67,6 @@ export function FilterBar({ imageId, profileId }: Props) {
       >
         Clear
       </button>
-    </form>
+    </div>
   );
 }

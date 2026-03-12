@@ -11,7 +11,7 @@ export default async function AdminLayout({
 
   if (!result.authorized) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-6 dark:bg-zinc-950">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-zinc-950">
         <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <h1 className="mb-2 text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             Not Authorized
@@ -22,7 +22,7 @@ export default async function AdminLayout({
           <form action="/logout" method="POST" className="mt-6">
             <button
               type="submit"
-              className="inline-block cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="inline-block cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               Sign out
             </button>
@@ -37,53 +37,53 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen bg-zinc-100 dark:bg-zinc-950">
       {/* Sidebar */}
-      <aside className="flex w-56 flex-shrink-0 flex-col bg-zinc-900 shadow-xl dark:bg-zinc-950">
-        <div className="flex flex-col px-4 pt-8 pb-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-700/80">
+      <aside className="flex w-64 flex-shrink-0 flex-col bg-zinc-950 shadow-xl">
+        {/* Header */}
+        <div className="px-5 pt-7 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/10">
               <span className="text-sm font-semibold text-white">
-                {user.email?.charAt(0)?.toUpperCase() ?? "C"}
+                {user.email?.charAt(0)?.toUpperCase() ?? "A"}
               </span>
             </div>
-            <div>
-              <h1 className="text-sm font-semibold tracking-tight text-white">
-                Admin
-              </h1>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold tracking-tight text-white">Admin</p>
+              <p className="truncate text-xs text-zinc-500">{user.email}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3">
+        <div className="mx-4 h-px bg-white/5" />
+
+        {/* Nav */}
+        <div className="flex-1 overflow-y-auto px-2 py-2">
           <AdminNav />
         </div>
 
-        <div className="border-t border-zinc-700/80 px-3 py-4">
-          <p
-            className="truncate rounded-md bg-zinc-800/60 px-3 py-2 text-xs text-zinc-400"
-            title={user.email ?? undefined}
-          >
-            {user.email}
-          </p>
-          <form action="/logout" method="POST" className="mt-3">
+        <div className="mx-4 h-px bg-white/5" />
+
+        {/* Footer */}
+        <div className="px-3 py-4 space-y-1.5">
+          <form action="/logout" method="POST">
             <button
               type="submit"
-              className="w-full cursor-pointer rounded-lg bg-zinc-800 px-3 py-2.5 text-left text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
+              className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-200"
             >
               Sign out
             </button>
           </form>
           <Link
             href="/"
-            className="mt-2 inline-flex w-full justify-center cursor-pointer rounded-lg border border-zinc-600 bg-transparent px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-500 hover:bg-zinc-800 hover:text-white active:scale-[0.98]"
+            className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-200"
           >
-            Back to homepage
+            ← Back to site
           </Link>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-zinc-100 dark:bg-zinc-950">
-        <div className="mx-auto max-w-7xl p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-7xl p-6 lg:p-10">
           {children}
         </div>
       </main>

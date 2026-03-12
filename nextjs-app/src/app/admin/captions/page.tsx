@@ -11,6 +11,9 @@ interface Caption {
   created_datetime_utc: string | null;
   profile_id: string | null;
   image_id: string | null;
+  humor_flavor_id: number | null;
+  caption_request_id: number | null;
+  llm_prompt_chain_id: number | null;
   images: { url: string } | null;
 }
 
@@ -45,6 +48,20 @@ function Flag({ value }: { value: boolean }) {
   );
 }
 
+function IdCell({ value }: { value: string | null }) {
+  if (!value) return <span className="text-zinc-400 dark:text-zinc-500">—</span>;
+  return (
+    <span title={value} className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+      {value.slice(0, 8)}…
+    </span>
+  );
+}
+
+function NumCell({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-zinc-400 dark:text-zinc-500">—</span>;
+  return <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{value}</span>;
+}
+
 export default async function CaptionsPage({ searchParams }: Props) {
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
@@ -59,7 +76,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
   let query = supabase
     .from("captions")
     .select(
-      "id, content, like_count, is_public, is_featured, created_datetime_utc, profile_id, image_id, images(url)",
+      "id, content, like_count, is_public, is_featured, created_datetime_utc, profile_id, image_id, humor_flavor_id, caption_request_id, llm_prompt_chain_id, images(url)",
       { count: "exact" }
     )
     .order("created_datetime_utc", { ascending: false })
@@ -83,7 +100,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Captions</h1>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Browse and filter community captions
+              {(count ?? 0).toLocaleString()} captions total
             </p>
           </div>
         </div>
@@ -101,126 +118,60 @@ export default async function CaptionsPage({ searchParams }: Props) {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Image</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Content</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Likes</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Public</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Featured</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Profile</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Image ID</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Created</th>
+              {["ID", "Image", "Content", "Likes", "Public", "Featured", "Profile", "Image ID", "Flavor", "Request", "Chain", "Created"].map((h) => (
+                <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {!captions?.length ? (
               <tr>
-                <td
-                  colSpan={9}
-                  className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
-                >
-                  {activeFilters.length
-                    ? "No captions match the current filters."
-                    : "No captions found."}
+                <td colSpan={12} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  {activeFilters.length ? "No captions match the current filters." : "No captions found."}
                 </td>
               </tr>
             ) : (
               captions.map((caption) => (
-                <tr
-                  key={caption.id}
-                  className="transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30"
-                >
-                  {/* ID */}
-                  <td className="px-5 py-3.5">
-                    <span
-                      title={caption.id}
-                      className="font-mono text-xs text-zinc-500 dark:text-zinc-400"
-                    >
-                      {caption.id.slice(0, 8)}…
-                    </span>
-                  </td>
+                <tr key={caption.id} className="transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30">
+                  <td className="px-5 py-3.5"><IdCell value={caption.id} /></td>
 
-                  {/* Thumbnail */}
                   <td className="px-5 py-3.5">
                     {caption.images?.url ? (
-                      <a
-                        href={caption.images.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={caption.images.url}
-                      >
+                      <a href={caption.images.url} target="_blank" rel="noopener noreferrer">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={caption.images.url}
-                          alt=""
-                          className="h-10 w-10 rounded object-cover bg-zinc-100 dark:bg-zinc-800"
-                        />
+                        <img src={caption.images.url} alt="" className="h-10 w-10 rounded object-cover bg-zinc-100 dark:bg-zinc-800" />
                       </a>
                     ) : (
                       <div className="h-10 w-10 rounded bg-zinc-100 dark:bg-zinc-800" />
                     )}
                   </td>
 
-                  {/* Content */}
                   <td className="px-5 py-3.5 text-zinc-700 dark:text-zinc-300">
                     {caption.content ? (
                       <span title={caption.content}>
-                        {caption.content.length > 80
-                          ? caption.content.slice(0, 80) + "…"
-                          : caption.content}
+                        {caption.content.length > 80 ? caption.content.slice(0, 80) + "…" : caption.content}
                       </span>
                     ) : (
                       <span className="text-zinc-400 dark:text-zinc-500">—</span>
                     )}
                   </td>
 
-                  {/* Likes */}
-                  <td className="px-5 py-3.5 tabular-nums text-zinc-700 dark:text-zinc-300">
-                    {caption.like_count ?? 0}
-                  </td>
+                  <td className="px-5 py-3.5 tabular-nums text-zinc-700 dark:text-zinc-300">{caption.like_count ?? 0}</td>
+                  <td className="px-5 py-3.5"><Flag value={caption.is_public} /></td>
+                  <td className="px-5 py-3.5"><Flag value={caption.is_featured} /></td>
+                  <td className="px-5 py-3.5"><IdCell value={caption.profile_id} /></td>
+                  <td className="px-5 py-3.5"><IdCell value={caption.image_id} /></td>
+                  <td className="px-5 py-3.5"><NumCell value={caption.humor_flavor_id} /></td>
+                  <td className="px-5 py-3.5"><NumCell value={caption.caption_request_id} /></td>
+                  <td className="px-5 py-3.5"><NumCell value={caption.llm_prompt_chain_id} /></td>
 
-                  {/* Flags */}
-                  <td className="px-5 py-3.5">
-                    <Flag value={caption.is_public} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <Flag value={caption.is_featured} />
-                  </td>
-
-                  {/* Profile ID */}
-                  <td className="px-5 py-3.5">
-                    {caption.profile_id ? (
-                      <span
-                        title={caption.profile_id}
-                        className="font-mono text-xs text-zinc-500 dark:text-zinc-400"
-                      >
-                        {caption.profile_id.slice(0, 8)}…
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 dark:text-zinc-500">—</span>
-                    )}
-                  </td>
-
-                  {/* Image ID */}
-                  <td className="px-5 py-3.5">
-                    {caption.image_id ? (
-                      <span
-                        title={caption.image_id}
-                        className="font-mono text-xs text-zinc-500 dark:text-zinc-400"
-                      >
-                        {caption.image_id.slice(0, 8)}…
-                      </span>
-                    ) : (
-                      <span className="text-zinc-400 dark:text-zinc-500">—</span>
-                    )}
-                  </td>
-
-                  {/* Created */}
-                  <td className="px-5 py-3.5 text-xs text-zinc-500 dark:text-zinc-400" suppressHydrationWarning>
+                  <td className="px-5 py-3.5 text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap" suppressHydrationWarning>
                     {formatDate(caption.created_datetime_utc)}
                   </td>
                 </tr>
@@ -238,28 +189,14 @@ export default async function CaptionsPage({ searchParams }: Props) {
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
             {page > 1 ? (
-              <a
-                href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page - 1) })}`}
-                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >
-                ← Prev
-              </a>
+              <a href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page - 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">← Prev</a>
             ) : (
-              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">
-                ← Prev
-              </span>
+              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">← Prev</span>
             )}
             {page < totalPages ? (
-              <a
-                href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page + 1) })}`}
-                className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >
-                Next →
-              </a>
+              <a href={`?${new URLSearchParams({ ...(image_id && { image_id }), ...(profile_id && { profile_id }), page: String(page + 1) })}`} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">Next →</a>
             ) : (
-              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">
-                Next →
-              </span>
+              <span className="rounded-lg border border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-300 dark:border-zinc-700 dark:text-zinc-600">Next →</span>
             )}
           </div>
         )}
