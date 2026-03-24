@@ -17,7 +17,11 @@ export async function createDomain(
   if (!apex_domain) return { error: "Domain is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("allowed_signup_domains").insert({ apex_domain });
+  const { error } = await supabase.from("allowed_signup_domains").insert({
+    apex_domain,
+    created_by_user_id: result.profile.id,
+    modified_by_user_id: result.profile.id,
+  });
   if (error) return { error: error.message };
 
   redirect("/admin/signup-domains");
@@ -37,7 +41,10 @@ export async function updateDomain(
   if (!apex_domain) return { error: "Domain is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("allowed_signup_domains").update({ apex_domain }).eq("id", id);
+  const { error } = await supabase
+    .from("allowed_signup_domains")
+    .update({ apex_domain, modified_by_user_id: result.profile.id })
+    .eq("id", id);
   if (error) return { error: error.message };
 
   redirect("/admin/signup-domains");

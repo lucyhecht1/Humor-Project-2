@@ -30,7 +30,11 @@ export async function createTerm(
   if (isNaN(payload.priority)) return { error: "Priority is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("terms").insert(payload);
+  const { error } = await supabase.from("terms").insert({
+    ...payload,
+    created_by_user_id: result.profile.id,
+    modified_by_user_id: result.profile.id,
+  });
   if (error) return { error: error.message };
 
   redirect("/admin/terms");
@@ -55,7 +59,7 @@ export async function updateTerm(
   const supabase = await createClient();
   const { error } = await supabase
     .from("terms")
-    .update({ ...payload, modified_datetime_utc: new Date().toISOString() })
+    .update({ ...payload, modified_by_user_id: result.profile.id })
     .eq("id", id);
   if (error) return { error: error.message };
 

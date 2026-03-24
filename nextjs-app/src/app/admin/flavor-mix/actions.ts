@@ -29,7 +29,7 @@ export async function updateFlavorMix(
   for (const { id, caption_count } of updates) {
     const { error } = await supabase
       .from("humor_flavor_mix")
-      .update({ caption_count })
+      .update({ caption_count, modified_by_user_id: result.profile.id })
       .eq("id", id);
     if (error) return { error: error.message };
   }

@@ -17,7 +17,11 @@ export async function createEmail(
   if (!email_address) return { error: "Email address is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("whitelist_email_addresses").insert({ email_address });
+  const { error } = await supabase.from("whitelist_email_addresses").insert({
+    email_address,
+    created_by_user_id: result.profile.id,
+    modified_by_user_id: result.profile.id,
+  });
   if (error) return { error: error.message };
 
   redirect("/admin/whitelisted-emails");
@@ -39,7 +43,7 @@ export async function updateEmail(
   const supabase = await createClient();
   const { error } = await supabase
     .from("whitelist_email_addresses")
-    .update({ email_address, modified_datetime_utc: new Date().toISOString() })
+    .update({ email_address, modified_by_user_id: result.profile.id })
     .eq("id", id);
   if (error) return { error: error.message };
 

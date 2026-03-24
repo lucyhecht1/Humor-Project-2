@@ -17,7 +17,11 @@ export async function createProvider(
   if (!name) return { error: "Name is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("llm_providers").insert({ name });
+  const { error } = await supabase.from("llm_providers").insert({
+    name,
+    created_by_user_id: result.profile.id,
+    modified_by_user_id: result.profile.id,
+  });
   if (error) return { error: error.message };
 
   redirect("/admin/llm-providers");
@@ -37,7 +41,10 @@ export async function updateProvider(
   if (!name) return { error: "Name is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("llm_providers").update({ name }).eq("id", id);
+  const { error } = await supabase
+    .from("llm_providers")
+    .update({ name, modified_by_user_id: result.profile.id })
+    .eq("id", id);
   if (error) return { error: error.message };
 
   redirect("/admin/llm-providers");

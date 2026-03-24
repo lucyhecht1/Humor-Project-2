@@ -31,7 +31,11 @@ export async function createCaptionExample(
   if (isNaN(payload.priority)) return { error: "Priority is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("caption_examples").insert(payload);
+  const { error } = await supabase.from("caption_examples").insert({
+    ...payload,
+    created_by_user_id: result.profile.id,
+    modified_by_user_id: result.profile.id,
+  });
   if (error) return { error: error.message };
 
   redirect("/admin/caption-examples");
@@ -56,7 +60,7 @@ export async function updateCaptionExample(
   const supabase = await createClient();
   const { error } = await supabase
     .from("caption_examples")
-    .update({ ...payload, modified_datetime_utc: new Date().toISOString() })
+    .update({ ...payload, modified_by_user_id: result.profile.id })
     .eq("id", id);
   if (error) return { error: error.message };
 
