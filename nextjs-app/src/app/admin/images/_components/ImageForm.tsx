@@ -32,7 +32,10 @@ export function ImageForm({ action, defaultValues = {}, profiles, onSuccess }: P
   const [inputMode, setInputMode] = useState<"url" | "file">("url");
   const [previewUrl, setPreviewUrl] = useState(defaultValues.url ?? "");
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null);
   const router = useRouter();
+
+  const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB
 
   useEffect(() => {
     if (state && "success" in state) {
@@ -47,9 +50,17 @@ export function ImageForm({ action, defaultValues = {}, profiles, onSuccess }: P
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > MAX_FILE_BYTES) {
+        setFileSizeError("Image is too big — please try a smaller file (under 4 MB).");
+        setFilePreview(null);
+        e.target.value = "";
+        return;
+      }
+      setFileSizeError(null);
       const objectUrl = URL.createObjectURL(file);
       setFilePreview(objectUrl);
     } else {
+      setFileSizeError(null);
       setFilePreview(null);
     }
   }
@@ -135,6 +146,9 @@ export function ImageForm({ action, defaultValues = {}, profiles, onSuccess }: P
               onChange={handleFileChange}
               className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:file:bg-zinc-800 dark:file:text-zinc-300"
             />
+            {fileSizeError && (
+              <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{fileSizeError}</p>
+            )}
             {filePreview && (
               <div className="mt-2 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -225,7 +239,7 @@ export function ImageForm({ action, defaultValues = {}, profiles, onSuccess }: P
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !!fileSizeError}
           className="cursor-pointer rounded-md bg-zinc-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           {isPending ? "Saving…" : "Save"}
