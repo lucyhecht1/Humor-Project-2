@@ -39,21 +39,16 @@ export default async function HomePage() {
   const imgs = images ?? [];
   const caps = captions ?? [];
 
-  // captions per image
-  const captionsByImage = new Map<string, number>();
-  for (const c of caps) {
-    if (c.image_id)
-      captionsByImage.set(c.image_id, (captionsByImage.get(c.image_id) ?? 0) + 1);
-  }
-
-  const avgCaptionsPerImage =
-    captionsByImage.size > 0 ? (caps.length / (imageCount ?? 1)).toFixed(1) : "0";
-
   const totalLikes = caps.reduce((sum, c) => sum + Math.max(0, c.like_count ?? 0), 0);
 
-  // top 7 images by caption count
+  // top 7 images by total likes across their captions
   const imageUrlMap = new Map(imgs.map((img) => [img.id, img.url]));
-  const topImages = [...captionsByImage.entries()]
+  const likesByImage = new Map<string, number>();
+  for (const c of caps) {
+    if (c.image_id)
+      likesByImage.set(c.image_id, (likesByImage.get(c.image_id) ?? 0) + (c.like_count ?? 0));
+  }
+  const topImages = [...likesByImage.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([id, count]) => ({ id, url: imageUrlMap.get(id) ?? null, count }))
     .filter((img) => img.url)
@@ -133,7 +128,7 @@ export default async function HomePage() {
                     <div className="absolute bottom-5 left-5">
                       <p className="text-xs font-bold uppercase tracking-widest text-orange-400">#1</p>
                       <p className="text-4xl font-bold tabular-nums text-white">{n(topImages[0].count)}</p>
-                      <p className="text-sm text-zinc-300">{topImages[0].count === 1 ? "caption" : "captions"}</p>
+                      <p className="text-sm text-zinc-300">{topImages[0].count === 1 ? "like" : "likes"}</p>
                     </div>
                   </div>
                 )}
@@ -146,7 +141,7 @@ export default async function HomePage() {
                       <div className="absolute bottom-3 left-3">
                         <p className="text-xs font-bold uppercase tracking-widest text-orange-400">#{img.rank}</p>
                         <p className="text-xl font-bold text-white tabular-nums">
-                          {n(img.count)} <span className="text-xs font-normal text-zinc-300">{img.count === 1 ? "caption" : "captions"}</span>
+                          {n(img.count)} <span className="text-xs font-normal text-zinc-300">{img.count === 1 ? "like" : "likes"}</span>
                         </p>
                       </div>
                     </div>
@@ -165,7 +160,7 @@ export default async function HomePage() {
                       <div className="absolute bottom-2.5 left-2.5">
                         <p className="text-xs font-bold text-orange-400">#{img.rank}</p>
                         <p className="text-sm font-semibold text-white tabular-nums">
-                          {n(img.count)} <span className="text-xs font-normal text-zinc-300">{img.count === 1 ? "caption" : "captions"}</span>
+                          {n(img.count)} <span className="text-xs font-normal text-zinc-300">{img.count === 1 ? "like" : "likes"}</span>
                         </p>
                       </div>
                     </div>

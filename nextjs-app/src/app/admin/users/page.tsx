@@ -2,6 +2,7 @@ import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import { SearchInput } from "./_components/SearchInput";
 import { SortableHeader } from "./_components/SortableHeader";
+import { UserStats } from "./_components/UserStats";
 
 interface Profile {
   id: string;
@@ -33,7 +34,6 @@ function formatCreatedUtc(iso: string): string {
 }
 
 export default async function UsersPage({ searchParams }: Props) {
-  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
@@ -68,15 +68,18 @@ export default async function UsersPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Users
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Manage accounts and access
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Users
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          Manage accounts and access
+        </p>
+      </div>
+
+      <UserStats />
+
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-4">
         <SearchInput defaultValue={q} />
       </div>
 

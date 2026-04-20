@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteButton } from "./_components/DeleteButton";
 import { EditImageButton } from "./_components/EditImageButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { ImageStats } from "./_components/ImageStats";
 
 interface Image {
   id: string;
@@ -87,15 +88,16 @@ export default async function ImagesPage({ searchParams }: Props) {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Images</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {(count ?? 0).toLocaleString("en-US")} images total
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Images</h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {(count ?? 0).toLocaleString("en-US")} images total
+        </p>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+      <ImageStats />
+
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
           {/* Search */}
           <LiveSearchInput defaultValue={q} placeholder="Search images..." />
 
@@ -126,7 +128,6 @@ export default async function ImagesPage({ searchParams }: Props) {
           >
             + Upload
           </Link>
-        </div>
       </div>
 
       {error && (

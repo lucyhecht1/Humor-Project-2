@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FilterBar } from "./_components/FilterBar";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { CaptionStats } from "./_components/CaptionStats";
 
 interface Caption {
   id: string;
@@ -65,7 +66,6 @@ function NumCell({ value }: { value: number | null }) {
 }
 
 export default async function CaptionsPage({ searchParams }: Props) {
-  "use no memo";
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
@@ -118,16 +118,19 @@ export default async function CaptionsPage({ searchParams }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Captions</h1>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {(count ?? 0).toLocaleString()} captions total
-            </p>
-          </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Captions</h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          {(count ?? 0).toLocaleString()} captions total
+        </p>
+      </div>
+
+      <CaptionStats />
+
+      <div className="mb-6">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-4">
+          <FilterBar imageId={image_id} profileId={profile_id} />
           <LiveSearchInput defaultValue={q} placeholder="Search content…" />
         </div>
-        <FilterBar imageId={image_id} profileId={profile_id} />
         {activeFilters.length > 0 && (
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Filtering by {activeFilters.join(", ")}
