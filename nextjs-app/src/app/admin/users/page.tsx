@@ -67,7 +67,7 @@ export default async function UsersPage({ searchParams }: Props) {
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   return (
-    <div>
+    <div suppressHydrationWarning>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Users

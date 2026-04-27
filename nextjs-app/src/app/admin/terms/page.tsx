@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { DeleteTermButton } from "./_components/DeleteTermButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
+import { TermStats } from "./_components/TermStats";
 
 interface Term {
   id: number;
@@ -76,6 +77,8 @@ export default async function TermsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <TermStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

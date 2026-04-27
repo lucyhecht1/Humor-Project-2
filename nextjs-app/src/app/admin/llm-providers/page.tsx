@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteProviderButton } from "./_components/DeleteProviderButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { ProviderStats } from "./_components/ProviderStats";
 
 interface LlmProvider {
   id: number;
@@ -63,6 +64,8 @@ export default async function LlmProvidersPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <ProviderStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

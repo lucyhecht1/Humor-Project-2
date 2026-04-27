@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteEmailButton } from "./_components/DeleteEmailButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { EmailStats } from "./_components/EmailStats";
 
 interface WhitelistedEmail {
   id: number;
@@ -65,6 +66,8 @@ export default async function WhitelistedEmailsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <EmailStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

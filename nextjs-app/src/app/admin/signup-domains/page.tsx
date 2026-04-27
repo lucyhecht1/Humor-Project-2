@@ -4,6 +4,7 @@ import Link from "next/link";
 import { InlineDeleteButton } from "./_components/InlineDeleteButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { DomainStats } from "./_components/DomainStats";
 
 interface AllowedSignupDomain {
   id: number;
@@ -63,6 +64,8 @@ export default async function SignupDomainsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <DomainStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

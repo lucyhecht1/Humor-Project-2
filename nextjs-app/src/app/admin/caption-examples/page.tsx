@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteCaptionExampleButton } from "./_components/DeleteCaptionExampleButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { CaptionExampleStats } from "./_components/CaptionExampleStats";
 
 interface CaptionExample {
   id: number;
@@ -87,6 +88,8 @@ export default async function CaptionExamplesPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <CaptionExampleStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

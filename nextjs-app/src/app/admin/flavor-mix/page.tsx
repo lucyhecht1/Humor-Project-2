@@ -1,6 +1,7 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import { FlavorMixForm } from "./_components/FlavorMixForm";
+import { FlavorMixStats } from "./_components/FlavorMixStats";
 
 interface MixRow {
   id: number;
@@ -43,6 +44,8 @@ export default async function FlavorMixPage({ searchParams }: Props) {
           Configure how many captions each flavor generates per run.
         </p>
       </div>
+
+      <FlavorMixStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

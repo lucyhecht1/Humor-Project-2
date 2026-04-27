@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteModelButton } from "./_components/DeleteModelButton";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { ModelStats } from "./_components/ModelStats";
 
 interface LlmModel {
   id: number;
@@ -68,6 +69,8 @@ export default async function LlmModelsPage({ searchParams }: Props) {
           </Link>
         </div>
       </div>
+
+      <ModelStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">

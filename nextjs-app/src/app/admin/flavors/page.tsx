@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
+import { FlavorStats } from "./_components/FlavorStats";
 
 interface HumorFlavor {
   id: number;
@@ -61,6 +62,8 @@ export default async function FlavorsPage({ searchParams }: Props) {
         </div>
         <LiveSearchInput defaultValue={q} placeholder="Search slugs…" />
       </div>
+
+      <FlavorStats />
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">
