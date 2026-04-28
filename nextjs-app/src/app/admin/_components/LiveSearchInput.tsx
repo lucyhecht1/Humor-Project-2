@@ -33,7 +33,7 @@ function LiveSearchInputInner({ defaultValue, placeholder = "Search…", paramNa
     }
     params.delete("page");
     const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {

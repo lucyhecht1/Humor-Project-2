@@ -1,9 +1,9 @@
 import { requireSuperadmin } from "@/lib/auth/requireSuperadmin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { LiveSearchInput } from "@/app/admin/_components/LiveSearchInput";
 import { SortableHeader } from "@/app/admin/_components/SortableHeader";
 import { CaptionRequestStats } from "./_components/CaptionRequestStats";
+import { FilterBar } from "./_components/FilterBar";
 
 interface CaptionRequest {
   id: number;
@@ -13,10 +13,11 @@ interface CaptionRequest {
 }
 
 type Props = {
-  searchParams: Promise<{ page?: string; q?: string; sort?: string; dir?: string }>;
+  searchParams: Promise<{ page?: string; image_id?: string; profile_id?: string; sort?: string; dir?: string }>;
 };
 
 const PAGE_SIZE = 100;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -35,7 +36,13 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
   const result = await requireSuperadmin();
   if (!result.authorized) return null;
 
-  const { page: pageParam = "1", q = "", sort = "created", dir = "desc" } = await searchParams;
+  const {
+    page: pageParam = "1",
+    image_id = "",
+    profile_id = "",
+    sort = "created",
+    dir = "desc",
+  } = await searchParams;
   const page = Math.max(1, parseInt(pageParam, 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -55,37 +62,52 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
     .order(sortColumn, { ascending: dir === "asc" })
     .range(from, to);
 
-  if (q.trim()) query = query.ilike("profile_id", `%${q.trim()}%`);
+  if (image_id.trim() && UUID_RE.test(image_id.trim())) query = query.eq("image_id", image_id.trim());
+  if (profile_id.trim() && UUID_RE.test(profile_id.trim())) query = query.eq("profile_id", profile_id.trim());
 
   const { data: requests, error, count } = await query.returns<CaptionRequest[]>();
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
+  const activeFilters = [
+    image_id && `image: ${image_id}`,
+    profile_id && `profile: ${profile_id}`,
+  ].filter(Boolean);
+
   function pageHref(p: number) {
     const params = new URLSearchParams();
-    if (q) params.set("q", q);
+    if (image_id) params.set("image_id", image_id);
+    if (profile_id) params.set("profile_id", profile_id);
     if (sort !== "created") params.set("sort", sort);
     if (dir !== "desc") params.set("dir", dir);
     params.set("page", String(p));
     return `/admin/caption-requests?${params.toString()}`;
   }
 
-  const preserveParams = { q };
+  const preserveParams = { image_id, profile_id };
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Caption Requests
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {(count ?? 0).toLocaleString()} requests{q ? " matching" : " total"}
-          </p>
-        </div>
-        <LiveSearchInput defaultValue={q} placeholder="Filter by profile ID…" />
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          Caption Requests
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400" suppressHydrationWarning>
+          {(count ?? 0).toLocaleString()} requests{activeFilters.length ? " matching filters" : " total"}
+        </p>
       </div>
 
       <CaptionRequestStats />
+
+      <div className="mb-6">
+        <div className="mb-3">
+          <FilterBar imageId={image_id} profileId={profile_id} />
+        </div>
+        {activeFilters.length > 0 && (
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Filtering by {activeFilters.join(", ")}
+          </p>
+        )}
+      </div>
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/50 dark:text-red-400">
@@ -98,8 +120,8 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
           <thead>
             <tr className="border-b border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50">
               <SortableHeader column="id" label="ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
-              <SortableHeader column="profile" label="Profile" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
-              <SortableHeader column="image" label="Image" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="profile" label="Profile ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
+              <SortableHeader column="image" label="Image ID" currentSort={sort} currentDir={dir} defaultDir="asc" preserveParams={preserveParams} />
               <SortableHeader column="created" label="Created" currentSort={sort} currentDir={dir} defaultDir="desc" preserveParams={preserveParams} />
             </tr>
           </thead>
@@ -107,7 +129,7 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
             {!requests?.length ? (
               <tr>
                 <td colSpan={4} className="px-5 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  {q ? `No requests matching "${q}".` : "No caption requests found."}
+                  {activeFilters.length ? "No requests match the current filters." : "No caption requests found."}
                 </td>
               </tr>
             ) : (
@@ -116,15 +138,11 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
                   <td className="px-5 py-3.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">
                     {req.id}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <span title={req.profile_id} className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                      {req.profile_id.slice(0, 8)}…
-                    </span>
+                  <td className="px-5 py-3.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                    {req.profile_id}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <span title={req.image_id} className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                      {req.image_id.slice(0, 8)}…
-                    </span>
+                  <td className="px-5 py-3.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                    {req.image_id}
                   </td>
                   <td className="px-5 py-3.5 text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap" suppressHydrationWarning>
                     {formatDate(req.created_datetime_utc)}
@@ -137,7 +155,7 @@ export default async function CaptionRequestsPage({ searchParams }: Props) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/30">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400" suppressHydrationWarning>
           {(count ?? 0).toLocaleString()} total
           {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>

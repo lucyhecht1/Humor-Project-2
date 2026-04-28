@@ -51,11 +51,11 @@ function Flag({ value }: { value: boolean }) {
   );
 }
 
-function IdCell({ value }: { value: string | null }) {
+function IdCell({ value, full = false }: { value: string | null; full?: boolean }) {
   if (!value) return <span className="text-zinc-400 dark:text-zinc-500">—</span>;
   return (
     <span title={value} className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-      {value.slice(0, 8)}…
+      {full ? value : `${value.slice(0, 8)}…`}
     </span>
   );
 }
@@ -100,8 +100,9 @@ export default async function CaptionsPage({ searchParams }: Props) {
     .order(sortColumn, { ascending: dir === "asc" })
     .range(from, to);
 
-  if (image_id.trim()) query = query.eq("image_id", image_id.trim());
-  if (profile_id.trim()) query = query.eq("profile_id", profile_id.trim());
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (image_id.trim() && UUID_RE.test(image_id.trim())) query = query.eq("image_id", image_id.trim());
+  if (profile_id.trim() && UUID_RE.test(profile_id.trim())) query = query.eq("profile_id", profile_id.trim());
   if (q.trim()) query = query.ilike("content", `%${q.trim()}%`);
 
   const { data: captions, error, count } = await query.returns<Caption[]>();
@@ -109,8 +110,8 @@ export default async function CaptionsPage({ searchParams }: Props) {
 
   const activeFilters = [
     q && `content: "${q}"`,
-    image_id && `image: ${image_id.slice(0, 8)}…`,
-    profile_id && `profile: ${profile_id.slice(0, 8)}…`,
+    image_id && `image: ${image_id}`,
+    profile_id && `profile: ${profile_id}`,
   ].filter(Boolean);
 
   const preserveParams = { q, image_id, profile_id };
@@ -119,7 +120,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Captions</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400" suppressHydrationWarning>
           {(count ?? 0).toLocaleString()} captions total
         </p>
       </div>
@@ -198,8 +199,8 @@ export default async function CaptionsPage({ searchParams }: Props) {
                   <td className="px-5 py-3.5 tabular-nums text-zinc-700 dark:text-zinc-300">{caption.like_count ?? 0}</td>
                   <td className="px-5 py-3.5"><Flag value={caption.is_public} /></td>
                   <td className="px-5 py-3.5"><Flag value={caption.is_featured} /></td>
-                  <td className="px-5 py-3.5"><IdCell value={caption.profile_id} /></td>
-                  <td className="px-5 py-3.5"><IdCell value={caption.image_id} /></td>
+                  <td className="px-5 py-3.5"><IdCell value={caption.profile_id} full /></td>
+                  <td className="px-5 py-3.5"><IdCell value={caption.image_id} full /></td>
                   <td className="px-5 py-3.5"><NumCell value={caption.humor_flavor_id} /></td>
                   <td className="px-5 py-3.5"><NumCell value={caption.caption_request_id} /></td>
                   <td className="px-5 py-3.5"><NumCell value={caption.llm_prompt_chain_id} /></td>
@@ -215,7 +216,7 @@ export default async function CaptionsPage({ searchParams }: Props) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/30">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400" suppressHydrationWarning>
           {(count ?? 0).toLocaleString()} total{activeFilters.length ? " matching filters" : ""}
           {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>
