@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 export type ImageFormState = { error: string } | { success: true } | null;
 
 const STORAGE_BUCKET = "images";
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB — must match next.config serverActions.bodySizeLimit
 
 async function resolveUrl(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +16,9 @@ async function resolveUrl(
 ): Promise<{ url: string } | { error: string }> {
   const file = formData.get("file") as File | null;
   if (file && file.size > 0) {
+    if (file.size > MAX_FILE_BYTES) {
+      return { error: "Image is too large — please upload a file under 4 MB." };
+    }
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file);

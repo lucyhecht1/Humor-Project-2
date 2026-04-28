@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/nextjs-app" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/prompt_chain_tool" vcs="Git" />
   </component>
 </project>
