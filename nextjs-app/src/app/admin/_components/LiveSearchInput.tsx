@@ -19,12 +19,18 @@ function LiveSearchInputInner({ defaultValue, placeholder = "Search…", paramNa
   const searchParams = useSearchParams();
   const [value, setValue] = useState(defaultValue);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Prevents server re-renders from overwriting user input mid-type
+  const pushedRef = useRef(false);
 
   useEffect(() => {
-    setValue(defaultValue);
+    if (!pushedRef.current) {
+      setValue(defaultValue);
+    }
+    pushedRef.current = false;
   }, [defaultValue]);
 
   function pushSearch(val: string) {
+    pushedRef.current = true;
     const params = new URLSearchParams(searchParams.toString());
     if (val.trim()) {
       params.set(paramName, val.trim());

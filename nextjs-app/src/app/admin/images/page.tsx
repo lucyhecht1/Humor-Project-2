@@ -99,7 +99,7 @@ export default async function ImagesPage({ searchParams }: Props) {
 
       <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
           {/* Search */}
-          <LiveSearchInput defaultValue={q} placeholder="Search images..." />
+          <LiveSearchInput defaultValue={q} placeholder="Search by URL..." />
 
           {/* Filter tabs */}
           <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
